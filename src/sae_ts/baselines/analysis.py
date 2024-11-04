@@ -88,18 +88,26 @@ def pinverse_steer(adapter, target, target_scale=1):
     x_optimal = (target - adapter.b) @ W_pinv
     return x_optimal
     
+def get_adapter_path(big_model=False, layer=12):
+    model_name = "9b" if big_model else "2b"
+    adapter_name = f"adapter_{model_name}_layer_{layer}.pt"
+    if not os.path.exists(adapter_name):
+        path = hf_hub_download(repo_id="schalnev/sae-ts-effects", filename=adapter_name)
+        return path
+    return adapter_name
 
 def load_optimised_steer(path, big_model=False):
+    """Load SAE-TS configuration and get steering vector."""
     with open(os.path.join(path, "optimised_steer.json"), 'r') as f:
         config = json.load(f)
+    
     layer = config['layer']
     sae = load_sae_model(config)
     adapter = LinearAdapter(sae.W_enc.shape[0], sae.W_enc.shape[1])
-    if big_model:
-        adapter.load_state_dict(torch.load(f"adapter_9b_layer_{layer}.pt"))
-    else:
-        adapter.load_state_dict(torch.load(f"adapter_layer_{layer}.pt"))
+    adapter_path = get_adapter_path(big_model=big_model, layer=layer)
+    adapter.load_state_dict(torch.load(adapter_path))
     adapter.to(device)
+    
     target = torch.zeros(adapter.W.shape[1]).to(device)
     for ft_id, ft_scale in config['features']:
         target[ft_id] = ft_scale
