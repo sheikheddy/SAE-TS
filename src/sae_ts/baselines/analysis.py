@@ -186,12 +186,6 @@ def analyse_steer(model, steer, hp, path, method='activation_steering'):
     with open(os.path.join(path, "criteria.json"), 'r') as f:
         criteria = json.load(f)
 
-    if default_prompt is not None:
-        prompt = default_prompt
-    else:
-        with open(os.path.join(path, "prompts.json"), 'r') as f:
-            prompt = json.load(f)[0]
-
     # Read the steering goal name from criteria.json
     steering_goal_name = criteria[0].get('name', 'Unknown')
 
@@ -203,13 +197,13 @@ def analyse_steer(model, steer, hp, path, method='activation_steering'):
     individual_products = []
 
     for scale in tqdm(scales):
-        texts = steer_model(model, steer, hp, prompt, scale=scale, n_samples=256)
+        texts = steer_model(model, steer, hp, default_prompt, scale=scale, n_samples=256)
         all_texts.append((scale, texts))
 
         score, coherence = multi_criterion_evaluation(
             texts,
             [criteria[0]['score'], criteria[0]['coherence']],
-            prompt=prompt,
+            prompt=default_prompt,
             print_errors=True,
         )
 
@@ -282,30 +276,31 @@ if __name__ == "__main__":
         model_name = "gemma-2-2b"
 # %%
 if __name__ == "__main__":
+    cfgs_dir = "../../../steer_cfgs"
 
     if big_model:
         paths = [
-            "steer_cfgs/gemma2-9b/anger",
-            "steer_cfgs/gemma2-9b/christian_evangelist",
-            "steer_cfgs/gemma2-9b/conspiracy",
-            "steer_cfgs/gemma2-9b/french",
-            "steer_cfgs/gemma2-9b/london",
-            "steer_cfgs/gemma2-9b/love",
-            "steer_cfgs/gemma2-9b/praise",
-            "steer_cfgs/gemma2-9b/want_to_die",
-            "steer_cfgs/gemma2-9b/wedding",
+            f"{cfgs_dir}/gemma2-9b/anger",
+            f"{cfgs_dir}/gemma2-9b/christian_evangelist",
+            f"{cfgs_dir}/gemma2-9b/conspiracy", 
+            f"{cfgs_dir}/gemma2-9b/french",
+            f"{cfgs_dir}/gemma2-9b/london",
+            f"{cfgs_dir}/gemma2-9b/love",
+            f"{cfgs_dir}/gemma2-9b/praise",
+            f"{cfgs_dir}/gemma2-9b/want_to_die",
+            f"{cfgs_dir}/gemma2-9b/wedding",
         ]
     else:
         paths = [
-            "steer_cfgs/gemma2/anger",
-            "steer_cfgs/gemma2/christian_evangelist",
-            "steer_cfgs/gemma2/conspiracy",
-            "steer_cfgs/gemma2/french",
-            "steer_cfgs/gemma2/london",
-            "steer_cfgs/gemma2/love",
-            "steer_cfgs/gemma2/praise",
-            "steer_cfgs/gemma2/want_to_die",
-            "steer_cfgs/gemma2/wedding",
+            f"{cfgs_dir}/gemma2/anger",
+            f"{cfgs_dir}/gemma2/christian_evangelist",
+            f"{cfgs_dir}/gemma2/conspiracy",
+            f"{cfgs_dir}/gemma2/french",
+            f"{cfgs_dir}/gemma2/london",
+            f"{cfgs_dir}/gemma2/love",
+            f"{cfgs_dir}/gemma2/praise",
+            f"{cfgs_dir}/gemma2/want_to_die",
+            f"{cfgs_dir}/gemma2/wedding",
         ]
 
     results = []
