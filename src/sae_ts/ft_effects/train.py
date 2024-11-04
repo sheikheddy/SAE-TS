@@ -1,19 +1,13 @@
 # %%
 import os
 import torch
-from torch import nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, TensorDataset, Dataset
+from torch.utils.data import DataLoader, TensorDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
+from huggingface_hub import hf_hub_download
 
-from transformer_lens import HookedTransformer
+from .utils import get_sae, LinearAdapter
 
-from .utils import get_sae, LinearAdapter, compute_scores
 # %%
 
 BIG_MODEL = True
@@ -24,46 +18,38 @@ sae = get_sae(big_model=BIG_MODEL)
 
 hp = "blocks.12.hook_resid_post"
 
-# %%
+def download_effects_data():
+    """Download pre-computed effects data from HuggingFace."""
+    repo_id = "slavachalnev/sae-ts-effects"
+    filename = "effects_9b.pt" if BIG_MODEL else "effects_2b.pt"
+    try:
+        path = hf_hub_download(repo_id=repo_id, filename=filename)
+        data = torch.load(path)
+        return data['features'], data['effects']
+    except Exception as e:
+        print(f"Error downloading effects data: {e}")
+        raise
 
+def get_training_data():
+    """Get training data either from local files or download from HuggingFace."""
+    local_path = "effects.pt"
+    
+    if os.path.exists(local_path):
+        print("Using local effects file")
+        data = torch.load(local_path)
+        features, effects = data['features'], data['effects']
+    else:
+        print("Downloading effects file from HuggingFace")
+        features, effects = download_effects_data()
+    
+    # Normalize features to have norm 1
+    features = features / torch.norm(features, dim=-1, keepdim=True)
+    
+    return features, effects
 
 def train(num_epochs, lr=1e-4):
-    if BIG_MODEL:
-        paths = [
-            "effects/G2_9B_L12/131k_from_0",
-            "effects/G2_9B_L12/131k_from_16k",
-            "effects/G2_9B_L12/131k_from_32k",
-        ]
-    else:
-        paths = [
-            "effects/G2_2B_L12/65k_from_0",
-            "effects/G2_2B_L12/65k_from_10k",
-            "effects/G2_2B_L12/65k_from_20k",
-            "effects/G2_2B_L12/65k_from_30k",
-            "effects/G2_2B_L12/65k_from_40k",
+    features, effects = get_training_data()
 
-            # "effects/G2_2B_L12/16k_from_0",
-            # "effects/G2_2B_L12/sample_and_combine_16k",
-
-            # "effects/G2_2B_L12/random",
-            # "effects/G2_2B_L12/random_2",
-            # "effects/G2_2B_L12/random_3",
-            # "effects/G2_2B_L12/random_4",
-            # "effects/G2_2B_L12/random_5",
-        ]
-
-    features = []
-    effects = []
-
-    for path in paths:
-        features.append(torch.load(os.path.join(path, "used_features.pt")))
-        effects.append(torch.load(os.path.join(path, "all_effects.pt")))
-
-    features = torch.cat(features)
-    effects = torch.cat(effects)
-
-    # normalise features to have norm 1
-    features = features / torch.norm(features, dim=-1, keepdim=True)
     n_val = 100
 
     val_features = features[-n_val:]
@@ -76,8 +62,8 @@ def train(num_epochs, lr=1e-4):
     dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=False)
 
+    adapter = LinearAdapter(sae.W_enc.shape[0], sae.W_enc.shape[1]).to(device)
     opt = torch.optim.Adam(adapter.parameters(), lr=lr)
-
     scheduler = CosineAnnealingLR(opt, T_max=num_epochs)
 
     for epoch in range(num_epochs):
@@ -116,20 +102,18 @@ def train(num_epochs, lr=1e-4):
         scheduler.step()
         avg_val_loss = val_total_loss / val_num_batches
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}")
+        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {avg_train_loss:.4f}, "
+              f"Validation Loss: {avg_val_loss:.4f}, LR: {scheduler.get_last_lr()[0]:.6f}")
 
+    return adapter
 
 # %%
 if __name__ == "__main__":
-    adapter = LinearAdapter(sae.W_enc.shape[0], sae.W_enc.shape[1])
+    adapter = train(15, lr=2e-4)
+    
+    # Save the trained adapter
+    save_path = "adapter_9b_layer_12.pt" if BIG_MODEL else "adapter_2b_layer_12.pt"
+    torch.save(adapter.state_dict(), save_path)
+    print(f"Adapter saved to {save_path}")
 
-    adapter.to(device)
-    train(15, lr=2e-4)
-
-# %%
-
-if BIG_MODEL:
-    torch.save(adapter.state_dict(), "adapter_9b_layer_12.pt")
-else:
-    torch.save(adapter.state_dict(), "adapter_2b_layer_12.pt")
 # %%

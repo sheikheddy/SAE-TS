@@ -16,11 +16,9 @@ from ..steering.utils import normalise_decoder
 from ..steering.sae import JumpReLUSAE
 from ..ft_effects.utils import LinearAdapter, steer_model
 from ..baselines.activation_steering import get_activation_steering, load_act_steer
-
-from steering.utils import normalise_decoder
+from ..steering.utils import normalise_decoder
 
 # %%
-
 
 def load_sae_model(config):
     sae_load_method = config.get('sae_load_method', 'saelens')
@@ -288,7 +286,6 @@ if __name__ == "__main__":
             "steer_cfgs/gemma2-9b/praise",
             "steer_cfgs/gemma2-9b/want_to_die",
             "steer_cfgs/gemma2-9b/wedding",
-            
         ]
     else:
         paths = [
@@ -301,17 +298,6 @@ if __name__ == "__main__":
             "steer_cfgs/gemma2/praise",
             "steer_cfgs/gemma2/want_to_die",
             "steer_cfgs/gemma2/wedding",
-
-            # "steer_cfgs/gemma2/london_65k",
-            # "steer_cfgs/gemma2/GGB_65k",
-
-            # "steer_cfgs/gemma2/citations",
-
-            # "steer_cfgs/extra_g2/immunology",
-            # "steer_cfgs/extra_g2/bonus_preview_extra",
-            # "steer_cfgs/extra_g2/months",
-            # "steer_cfgs/extra_g2/say",
-
         ]
 
     results = []
@@ -353,13 +339,13 @@ if __name__ == "__main__":
         results.append(result)
         graph_data_list.append(graph_data)
 
-        # # Rotation Steering
-        # print("Rotation Steering")
-        # steer, hp, layer = load_rotation_steer(path)
-        # steer = steer.to(device)
-        # result, graph_data = analyse_steer(model, steer, hp, path, method='RotationSteer')
-        # results.append(result)
-        # graph_data_list.append(graph_data)
+        # Rotation Steering
+        print("Rotation Steering")
+        steer, hp, layer = load_rotation_steer(path)
+        steer = steer.to(device)
+        result, graph_data = analyse_steer(model, steer, hp, path, method='RotationSteer')
+        results.append(result)
+        graph_data_list.append(graph_data)
 
     with open(f'steering_results_{model_name}.json', 'w') as f:
         json.dump(results, f, indent=2)
@@ -371,50 +357,5 @@ if __name__ == "__main__":
     # with open(f'graph_data_all_methods_{model_name}_surprisingly.json', 'w') as f:
     #     json.dump(graph_data_list, f, indent=2)
 
-# # %%
-# if __name__ == "__main__":
-#     paths = [
-#         "steer_cfgs/london_g2/layer_1",
-#         "steer_cfgs/london_g2/layer_2",
-#         # "steer_cfgs/london_g2/layer_3",
-#         "steer_cfgs/london_g2/layer_4",
-#         # "steer_cfgs/london_g2/layer_5",
-#         "steer_cfgs/london_g2/layer_8",
-#         "steer_cfgs/london_g2/layer_12",
-#         "steer_cfgs/london_g2/layer_13",
-#         "steer_cfgs/london_g2/layer_16",
-#         "steer_cfgs/london_g2/layer_22",
-#         # "steer_cfgs/london_g2/layer_24",
-#     ]
-
-#     results = []
-#     graph_data_list = []
-
-#     for path in paths:
-#         # Activation Steering
-#         print("Activation Steering")
-#         pos_examples, neg_examples, val_examples, layer = load_act_steer(path)
-#         steer = get_activation_steering(model, pos_examples, neg_examples, device=device, layer=layer)
-#         steer = steer / torch.norm(steer, dim=-1, keepdim=True)
-#         hp = f"blocks.{layer}.hook_resid_post"
-#         result, graph_data = analyse_steer(model, steer, hp, path, method='ActSteer')
-#         results.append(result)
-#         graph_data_list.append(graph_data)
-
-#         # SAE Steering
-#         print("SAE Steering")
-#         steer, hp, layer = load_sae_steer(path)
-#         steer = steer.to(device)
-#         result, graph_data = analyse_steer(model, steer, hp, path, method='SAE')
-#         results.append(result)
-#         graph_data_list.append(graph_data) 
-
-#     # Write the results to a JSON file
-#     with open('steering_results_london.json', 'w') as f:
-#         json.dump(results, f, indent=2)
-
-#     # Write the graph data to a JSON file
-#     with open('graph_data_all_methods_london.json', 'w') as f:
-#         json.dump(graph_data_list, f, indent=2)
 
 # %%
