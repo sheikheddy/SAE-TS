@@ -2,7 +2,7 @@
 Improving Steering Vectors by Targeting Sparse Autoencoder Features
 
 ## Abstract
-To control the behavior of language models, steering methods attempt to ensure that outputs of the model satisfy specific pre-defined properties. Adding steering vectors to the model is a promising method of model control that is easier than finetuning, and may be more robust than prompting. It can be difficult to anticipate the effects of steering vectors produced by almost all existing methods, such as CAA or the direct use of SAE latents. In our work, we address this issue by using SAEs to measure the effects of steering vectors, giving us a method that can be used to understand the causal effect of any steering vector intervention. We call our method SAE-Targeted Steering (SAE-TS) which finds steering vectors to target specific SAE features while minimizing unintended side effects. We show that overall, SAE-TS balances steering effects with coherence better than CAA and SAE feature steering, when evaluated on a range of tasks.
+To control the behavior of language models, steering methods attempt to ensure that outputs of the model satisfy specific pre-defined properties. Adding steering vectors to the model is a promising method of model control that is easier than finetuning, and may be more robust than prompting. However, it can be difficult to anticipate the effects of steering vectors produced by methods such as CAA or the direct use of SAE latents. In our work, we address this issue by using SAEs to measure the effects of steering vectors, giving us a method that can be used to understand the causal effect of any steering vector intervention. We use this method for measuring causal effects to develop an improved steering method, **SAE-Targeted Steering** (SAE-TS), which finds steering vectors to target specific SAE features while minimizing unintended side effects. We show that overall, SAE-TS balances steering effects with coherence better than CAA and SAE feature steering, when evaluated on a range of tasks.
 
 ## Installation
 
@@ -10,7 +10,6 @@ To control the behavior of language models, steering methods attempt to ensure t
 pip install -e .
 ```
 
-## Environment Setup
 Create a `.env` file in the root directory with your OpenAI API key (required for evaluations):
 ```
 OPENAI_API_KEY='sk-...'
