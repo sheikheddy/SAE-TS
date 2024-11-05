@@ -5,12 +5,13 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from huggingface_hub import hf_hub_download
+import scipy.linalg as linalg
 
 from .utils import get_sae, LinearAdapter
 
 # %%
 
-BIG_MODEL = True
+BIG_MODEL = False
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -46,6 +47,29 @@ def get_training_data():
     features = features / torch.norm(features, dim=-1, keepdim=True)
     
     return features, effects
+
+def calculate_rotation_matrix(adapter: LinearAdapter, sae):
+    """Calculate rotation matrix between adapter and SAE decoder weights."""
+    # Normalize weights
+    normed_adapter = adapter.W / torch.norm(adapter.W, dim=0)
+    normed_decoder = sae.W_dec / torch.norm(sae.W_dec, dim=1, keepdim=True)
+    
+    # Convert to numpy for SVD calculation
+    adapter_np = normed_adapter.cpu().numpy()
+    decoder_np = normed_decoder.cpu().numpy()
+    
+    # Calculate rotation matrix using SVD
+    M = decoder_np @ adapter_np.T
+    U, _, Vt = linalg.svd(M)
+    R = U @ Vt
+    
+    return torch.tensor(R).to(device)
+
+def calculate_correction_bias(adapter: LinearAdapter):
+    """Calculate correction bias from adapter."""
+    b = adapter.W @ adapter.b
+    b = b / torch.norm(b)
+    return b
 
 def train(num_epochs, lr=1e-4):
     features, effects = get_training_data()
@@ -112,8 +136,21 @@ if __name__ == "__main__":
     adapter = train(15, lr=2e-4)
     
     # Save the trained adapter
-    save_path = "adapter_9b_layer_12.pt" if BIG_MODEL else "adapter_2b_layer_12.pt"
-    torch.save(adapter.state_dict(), save_path)
-    print(f"Adapter saved to {save_path}")
+    model_name = "9b" if BIG_MODEL else "2b"
+    adapter_name = f"adapter_{model_name}_layer_12.pt"
+    torch.save(adapter.state_dict(), adapter_name)
+    print(f"Adapter saved to {adapter_name}")
+
+    # Calculate and save rotation matrix
+    R_dec = calculate_rotation_matrix(adapter, sae)
+    R_dec_name = f"R_dec_{model_name}_layer_12.pt"
+    torch.save(R_dec, R_dec_name)
+    print(f"Rotation matrix saved to {R_dec_name}")
+
+    # Calculate and save correction bias
+    correction_bias = calculate_correction_bias(adapter)
+    bias_name = f"correction_bias_{model_name}_layer_12.pt"
+    torch.save(correction_bias, bias_name)
+    print(f"Correction bias saved to {bias_name}")
 
 # %%
