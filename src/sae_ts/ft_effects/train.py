@@ -20,7 +20,7 @@ hp = "blocks.12.hook_resid_post"
 
 def download_effects_data():
     """Download pre-computed effects data from HuggingFace."""
-    repo_id = "slavachalnev/sae-ts-effects"
+    repo_id = "schalnev/sae-ts-effects"
     filename = "effects_9b.pt" if BIG_MODEL else "effects_2b.pt"
     try:
         path = hf_hub_download(repo_id=repo_id, filename=filename)

@@ -27,7 +27,7 @@ def top_activations(activations: torch.Tensor, top_k: int=10):
 
 
 @torch.no_grad()
-def normalise_decoder(sae, scale_input=False):
+def normalise_decoder(sae):
     """
     Normalises the decoder weights of the SAE to have unit norm.
     
@@ -41,11 +41,6 @@ def normalise_decoder(sae, scale_input=False):
     sae.W_dec /= norms[:, None]
     sae.W_enc *= norms[None, :]
     sae.b_enc *= norms
-
-    if scale_input:
-        raise NotImplementedError()
-        sae.W_enc *= 0.2175 # computed in slava_scratch/scale_sae.ipynb
-
         
 def get_gemma2_2b_SAE_path(layer, width=16, closest_l0=100):
     fs = HfFileSystem()
