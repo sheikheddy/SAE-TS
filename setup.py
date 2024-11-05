@@ -11,7 +11,9 @@ setup(
         "sae_lens",
         "huggingface-hub",
         "plotly",
-        "kaleido"
+        "kaleido",
+        "openai",
+        "nest_asyncio",
     ],
     python_requires=">=3.8",
 )

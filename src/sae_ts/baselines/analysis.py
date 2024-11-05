@@ -262,7 +262,7 @@ def analyse_steer(model, steer, hp, path, method='activation_steering'):
 
 # %%
 if __name__ == "__main__":
-    big_model = True
+    big_model = False
     default_prompt = "I think"
     # default_prompt = "Surprisingly," 
 
@@ -276,7 +276,7 @@ if __name__ == "__main__":
         model_name = "gemma-2-2b"
 # %%
 if __name__ == "__main__":
-    cfgs_dir = "../../../steer_cfgs"
+    cfgs_dir = "steer_cfgs"
 
     if big_model:
         paths = [
@@ -294,13 +294,13 @@ if __name__ == "__main__":
         paths = [
             f"{cfgs_dir}/gemma2/anger",
             f"{cfgs_dir}/gemma2/christian_evangelist",
-            f"{cfgs_dir}/gemma2/conspiracy",
-            f"{cfgs_dir}/gemma2/french",
-            f"{cfgs_dir}/gemma2/london",
-            f"{cfgs_dir}/gemma2/love",
-            f"{cfgs_dir}/gemma2/praise",
-            f"{cfgs_dir}/gemma2/want_to_die",
-            f"{cfgs_dir}/gemma2/wedding",
+            # f"{cfgs_dir}/gemma2/conspiracy",
+            # f"{cfgs_dir}/gemma2/french",
+            # f"{cfgs_dir}/gemma2/london",
+            # f"{cfgs_dir}/gemma2/love",
+            # f"{cfgs_dir}/gemma2/praise",
+            # f"{cfgs_dir}/gemma2/want_to_die",
+            # f"{cfgs_dir}/gemma2/wedding",
         ]
 
     results = []
