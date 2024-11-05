@@ -138,8 +138,34 @@ def load_pinv_steer(path, big_model=False):
     vec = pinverse_steer(adapter, target, target_scale=1)
     return vec, config['hp'], layer
 
-def load_rotation_steer(path):
-    # Like optimised steer, same config, but use rotation matrix
+def get_rotation_matrix_path(layer, big_model=False):
+    """Get the path to the rotation matrix, downloading from HF hub if needed."""
+    model_name = "9b" if big_model else "2b"
+    rotation_name = f"R_dec_{model_name}_layer_{layer}.pt"
+    correction_name = f"correction_bias_{model_name}_layer_{layer}.pt"
+    
+    if not os.path.exists(rotation_name):
+        rotation_path = hf_hub_download(
+            repo_id="schalnev/sae-ts-effects", 
+            filename=rotation_name,
+            repo_type="dataset"
+        )
+    else:
+        rotation_path = rotation_name
+        
+    if not os.path.exists(correction_name):
+        correction_path = hf_hub_download(
+            repo_id="schalnev/sae-ts-effects",
+            filename=correction_name,
+            repo_type="dataset"
+        )
+    else:
+        correction_path = correction_name
+        
+    return rotation_path, correction_path
+
+def load_rotation_steer(path, big_model=False):
+    """Load rotation steering configuration and get steering vector."""
     with open(os.path.join(path, "optimised_steer.json"), 'r') as f:
         config = json.load(f)
     
@@ -149,9 +175,12 @@ def load_rotation_steer(path):
     sae = load_sae_model(config)
     sae.to(device)
     
-    R = torch.load(f"R_dec_layer_{layer}.pt")
+    # Get paths to rotation matrix and bias, downloading if needed
+    rotation_path, correction_path = get_rotation_matrix_path(layer, big_model)
+    
+    R = torch.load(rotation_path)
     R = R.to(device)
-    b = torch.load(f"correction_bias_layer_{layer}.pt")
+    b = torch.load(correction_path)
     b = b.to(device)
 
     vectors = []
