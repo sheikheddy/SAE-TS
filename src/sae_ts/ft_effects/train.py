@@ -18,13 +18,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sae = get_sae(big_model=BIG_MODEL)
 
 hp = "blocks.12.hook_resid_post"
-
 def download_effects_data():
     """Download pre-computed effects data from HuggingFace."""
     repo_id = "schalnev/sae-ts-effects"
     filename = "effects_9b.pt" if BIG_MODEL else "effects_2b.pt"
     try:
-        path = hf_hub_download(repo_id=repo_id, filename=filename)
+        path = hf_hub_download(
+            repo_id=repo_id,
+            filename=filename,
+            repo_type="dataset"
+        )
         data = torch.load(path)
         return data['features'], data['effects']
     except Exception as e:
@@ -55,11 +58,12 @@ def calculate_rotation_matrix(adapter: LinearAdapter, sae):
     normed_decoder = sae.W_dec / torch.norm(sae.W_dec, dim=1, keepdim=True)
     
     # Convert to numpy for SVD calculation
-    adapter_np = normed_adapter.cpu().numpy()
-    decoder_np = normed_decoder.cpu().numpy()
+    adapter_np = normed_adapter.detach().cpu().numpy()
+    decoder_np = normed_decoder.detach().cpu().numpy()
     
     # Calculate rotation matrix using SVD
-    M = decoder_np @ adapter_np.T
+    # M = decoder_np @ adapter_np.T
+    M = adapter_np @ decoder_np
     U, _, Vt = linalg.svd(M)
     R = U @ Vt
     
