@@ -42,7 +42,7 @@ def get_acts(examples, model, device, use_chat):
         acts = [cache[p][0].mean(0) for p in points]
         acts = torch.stack(acts, dim=0)
         total_acts += acts
-        return total_acts / len(examples)
+    return total_acts / len(examples)
 
 def steer_model(model, steer, layer, text, use_chat, scale=5):
     if use_chat:
