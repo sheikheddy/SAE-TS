@@ -43,7 +43,7 @@ PROMPTS = [
     "The weather",
     "Dear Sir/Madam",
     "Preheat the oven",
-    "It's interesting that"
+    "It's interesting that",
     "Assistant:",
     "I went up to",
     "New study suggests",
